@@ -68,6 +68,7 @@ usage() {
     echo ''
     echo " \$AUTHOR_NAME          -- '$AUTHOR_NAME'"
     echo " \$AUTHOR_EMAIL         -- '$AUTHOR_EMAIL'"
+    echo " \$AUTHOR_WEBSITE       -- '$AUTHOR_WEBSITE'"
     echo " \$LICENSE_DIR          -- '$LICENSE_DIR'"
     echo ''
     echo " [ENV=VAL ...] $(basename "$0") <flag | @license>"
