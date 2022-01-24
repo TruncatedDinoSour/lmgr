@@ -36,7 +36,7 @@ generated on first launch
 - **AUTHOR_NAME** -- Your full name
 - **AUTHOR_EMAIL** -- Your email
 - **AUTHOR_WEBSITE** -- Your website
-  -- (optional) **TEMPLATE_DIR** -- Where are your license templates stored (default: `~/.config/licenses/`)
+- (optional) **TEMPLATE_DIR** -- Where are your license templates stored (default: `~/.config/licenses/`)
 
 Example config:
 
