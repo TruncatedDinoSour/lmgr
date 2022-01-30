@@ -131,10 +131,13 @@ check_license_conflict() {
 
 get_license() {
     depend 'cp'
+    check_valid_license "$1"
 
     check_license_conflict
 
-    if [ ! -f "$LICENSE_DIR"/"$1" ]; then
+    user_license="$(echo "$1" | sed "$LICENSE_SED")"
+
+    if [ ! -f "$LICENSE_DIR"/"$user_license" ]; then
         error "No licence by the name of '$1'"
         list_licenses
         error 'Use of of the above'
@@ -150,9 +153,9 @@ get_license() {
     fi
 
     l_name='LICENSE'
-    [ "$(head -n1 "$LICENSE_DIR"/"$1")" = 'UNLICENSE' ] && l_name='UNLICENSE'
+    [ "$(head -n1 "$LICENSE_DIR"/"$user_license")" = 'UNLICENSE' ] && l_name='UNLICENSE'
 
-    cp -fiL "$LICENSE_DIR"/"$1" "$l_name"
+    cp -fiL "$LICENSE_DIR"/"$user_license" "$l_name"
 
     sed -i "$l_name" \
         -e "s/{{PROJECT_NAME}}/$(sed_escape "$(basename "$PWD")")/g" \
@@ -172,7 +175,6 @@ license_picker() {
 
     license="$(list_licenses |
         awk '{ print $2 }' |
-        sed "$LICENSE_SED" |
         FZF_DEFAULT_OPTS='' fzf --layout=reverse --height=20 --no-mouse -i --preview "cat $LICENSE_DIR/{}" || echo '')"
 
     if [ -z "$license" ]; then
@@ -259,7 +261,7 @@ new_template() {
 
 delete_license() {
     check_valid_license "$1"
-    rm -vi "$LICENSE_DIR"/"$1"
+    rm -vi "$LICENSE_DIR"/"$(echo "$1" | sed "$LICENSE_SED")"
 }
 
 new_config() {
@@ -313,13 +315,17 @@ main() {
         tmp_l=0
 
         for lic in "$@"; do
-            [ "$tmp_l" = 0 ] && tmp_l=1 && continue
-            delete_license "$(echo "$lic" | sed "$LICENSE_SED")"
+            if [ "$tmp_l" = 0 ]; then
+                tmp_l=1
+                continue
+            fi
+
+            delete_license "$lic"
         done
         ;;
     -new-config | -C) new_config ;;
 
-    @*) check_valid_license "$1" && get_license "$(echo "$1" | sed "$LICENSE_SED")" ;;
+    @*) check_valid_license "$1" && get_license "$1" ;;
     *) error "Flag $1 is not known." && usage && exit 2 ;;
     esac
 }
