@@ -84,6 +84,7 @@ usage() {
     echo '  -new-template    -t                     create a new license template'
     echo '  -delete-license  -R @license_name ...   delete a license from templates'
     echo '  -new-config      -C                     create a default config overwriting current one'
+    echo '  -check-conflict  -k                     check if current licene(s) are conflicting'
     echo ''
     echo " LMGR_COLOURS=0|[1]                       turn colour on (1) or off (0)               [${LMGR_COLOURS:-1}]"
 }
@@ -326,6 +327,7 @@ main() {
         done
         ;;
     -new-config | -C) new_config ;;
+    -check-conflict | -k) check_license_conflict ;;
 
     @*) check_valid_license "$1" && get_license "$1" ;;
     *) error "Flag $1 is not known." && usage && exit 2 ;;
