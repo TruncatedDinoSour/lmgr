@@ -11,7 +11,7 @@
 
 set -e
 
-VERSION='0.7'
+VERSION='0.8'
 
 # Init
 
@@ -164,9 +164,9 @@ get_license() {
         -e "s/{{AUTHOR_EMAIL}}/$(sed_escape "$AUTHOR_EMAIL")/g" \
         -e "s/{{AUTHOR_WEBSITE}}/$(sed_escape "$AUTHOR_WEBSITE")/g"
 
-    info "Current license now is set to $(show_license)"
-
     check_license_conflict
+
+    info "Current license now is set to $(show_license)"
 }
 
 license_picker() {
@@ -175,6 +175,7 @@ license_picker() {
 
     license="$(list_licenses |
         awk '{ print $2 }' |
+        sed "$LICENSE_SED" |
         FZF_DEFAULT_OPTS='' fzf --layout=reverse --height=20 --no-mouse -i --preview "cat $LICENSE_DIR/{}" || echo '')"
 
     if [ -z "$license" ]; then
@@ -182,7 +183,7 @@ license_picker() {
         return
     fi
 
-    get_license "$license"
+    get_license "@$license"
 }
 
 search_license() {
@@ -298,6 +299,7 @@ main() {
 
     ffind "$LICENSE_DIR" -not -name . -not -path "$LICENSE_DIR" -prune -not -type f -exec rm -R {} +
 
+    check_license_conflict
     case "$1" in
     -help | --help | -h) usage ;;
     -list-licenses | -l) list_licenses ;;
