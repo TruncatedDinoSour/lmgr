@@ -3,15 +3,15 @@
 
     This license is an open source license with restrictions for commercial and corporate use.
     Any project under this license ...
-        CANNOT be used commercially
-        CANNOT be redistributed with any sort of fee
-        CANNOT be redistributed in any proprietary form (binary, obfuscated, etc.)
-        CANNOT be patented
-        CANNOT change to any more proprietary license
-        CANNOT depend on any proprietary code/code blobs/software
-        CANNOT be used by any corporate individual, company or organisation
+        CAN NOT be used commercially
+        CAN NOT be redistributed with any sort of fee
+        CAN NOT be redistributed in any proprietary form (binary, obfuscated, etc.)
+        CAN NOT be patented
+        CAN NOT change to any more proprietary license
+        CAN NOT depend on any proprietary code/code blobs/software
+        CAN NOT be used by any corporate individual, company or organization
 
-        DOESN'T have any warranty
+        DOES NOT have any warranty
 
         CAN be modified
         CAN be redistributed in an open source form
