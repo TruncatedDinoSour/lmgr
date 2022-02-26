@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-# Licensed under ArArv2 license: https://files.ari-web.xyz/files/ArAr.ari-archer.LICENSE
+# Licensed under ArAr v2 license: https://files.ari-web.xyz/files/ArAr.ari-archer.LICENSE
 # Description: manage, switch and template licenses
 
 # DEPENDS ON:
@@ -11,11 +11,18 @@
 
 set -e
 
-VERSION='0.8'
+VERSION='0.9'
 
 # Init
 
-[ -z "$HOME" ] && HOME="$(eval echo '~')"
+if [ ! -d "$HOME" ]; then
+    # shellcheck disable=2016
+    {
+        echo 'FATAL: $HOME is not set to a valid directory'
+        echo 'TIP: try running: export HOME="$(eval echo '~')"'
+    } 1>&2
+    exit 1
+fi
 
 depend() { command -v -- "$1" >/dev/null || (echo "FATAL: depend(): Dependency '$1' broken" 1>&2 && exit 11); }
 
@@ -58,6 +65,13 @@ check_valid_license() {
 
 sed_escape() { echo "$1" | sed -e 's/[\/&]/\\&/g'; }
 
+yn() {
+    printf "   %s$([ "$1" ] && echo ' ')[y/n] " "$1"
+
+    read -r yn
+    [ "$yn" = 'y' ] || exit 0
+}
+
 # Functions
 
 list_licenses() { ffind "$LICENSE_DIR" -maxdepth 1 -type f -printf " ${BRIGHT}*${RESET} @%f\n"; }
@@ -71,20 +85,20 @@ usage() {
     echo " \$AUTHOR_WEBSITE       -- '$AUTHOR_WEBSITE'"
     echo " \$LICENSE_DIR          -- '$LICENSE_DIR'"
     echo ''
-    echo " [ENV=VAL ...] $(basename "$0") <flag | @license>"
+    echo " [ENV=VAL ...] $(basename "$0") <subcommand | @license>"
     echo ''
-    echo '  -help --help     -h                     show usage'
-    echo '  -list-licenses   -l                     list awailable licenses'
-    echo '  -current-license -c                     show current active project license'
-    echo '  -pick-license    -p                     pick a license in a FZF menu'
-    echo '  -preview-license -P @license_name       preview a license template'
-    echo '  -remove-license  -r                     remove all licenses from the current project'
-    echo "  -search-license  -s '<query | patten>'  search for license"
-    echo '  -template-help   -T                     print help for templating'
-    echo '  -new-template    -t                     create a new license template'
-    echo '  -delete-license  -R @license_name ...   delete a license from templates'
-    echo '  -new-config      -C                     create a default config overwriting current one'
-    echo '  -check-conflict  -k                     check if current licene(s) are conflicting'
+    echo '  help            h                       show usage'
+    echo '  list-licenses   l                       list awailable licenses'
+    echo '  current-license c                       show current active project license'
+    echo '  pick-license    p                       pick a license in a FZF menu'
+    echo '  preview-license P @license_name         preview a license template'
+    echo '  remove-license  r                       remove all licenses from the current project'
+    echo "  search-license  s '<query | patten>'    search for license"
+    echo '  template-help   T                       print help for templating'
+    echo "  new-template    t 'template_name'       create a new license template"
+    echo '  delete-license  R @license_name ...     delete a license from templates'
+    echo '  new-config      C                       create a default config overwriting current one'
+    echo '  check-conflict  k                       check if current licene(s) are conflicting'
     echo ''
     echo " LMGR_COLOURS=0|[1]                       turn colour on (1) or off (0)               [${LMGR_COLOURS:-1}]"
 }
@@ -99,11 +113,11 @@ make_new_config() {
         echo "export AUTHOR_WEBSITE='https://example.com/'"
         echo "export LICENSE_DIR='$LICENSE_DIR'"
     } >"$HOME"/.config/license.conf
+
+    warn "Make sure to edit '$HOME/.config/license.conf' to change \$AUTHOR_WEBSITE"
 }
 
 show_license() {
-    depend 'head'
-
     l_name='LICENSE'
     [ -f UNLICENSE ] && l_name='UNLICENSE'
 
@@ -118,7 +132,7 @@ check_license_conflict() {
     if [ -f ./LICENSE ] && [ -f ./UNLICENSE ]; then
         error 'Licensing conflict: UNLICENSE and LICENSE both found'
 
-        printf '   Do you either (1) Remove LICENSE or (2) Remove UNLICENSE? [1/2] '
+        printf '   Do you either (1) Remove LICENSE or (2) Remove UNLICENSE ? [1/2] '
         read -r lr
 
         case "$lr" in
@@ -127,11 +141,9 @@ check_license_conflict() {
         *) error "'$lr' is not an option" && exit 1 ;;
         esac || (error 'Could not resolve licensing conflict' && exit 6)
     fi
-
 }
 
 get_license() {
-    depend 'cp'
     check_valid_license "$1"
 
     check_license_conflict
@@ -146,17 +158,13 @@ get_license() {
         exit 5
     elif [ -f ./LICENSE ] || [ -f ./UNLICENSE ]; then
         info "Found license: $(show_license)"
-
-        printf '   Switch licenses? [y/n] '
-        read -r yn
-
-        [ ! "$yn" = "y" ] && exit
+        yn 'Switch licenses ?'
     fi
 
     l_name='LICENSE'
     [ "$(head -n1 "$LICENSE_DIR"/"$user_license")" = 'UNLICENSE' ] && l_name='UNLICENSE'
 
-    cp -fiL "$LICENSE_DIR"/"$user_license" "$l_name"
+    yn "Overwrite $l_name ?" && cp -fL "$LICENSE_DIR"/"$user_license" "$l_name"
 
     sed -i "$l_name" \
         -e "s/{{PROJECT_NAME}}/$(sed_escape "$(basename "$PWD")")/g" \
@@ -196,6 +204,9 @@ search_license() {
 }
 
 remove_license() {
+    einfo 'Are you sure you want to unlicense this project ?'
+    yn
+
     rm -f UNLICENSE LICENSE 2>/dev/null || true
     info "Current license now is set to $(show_license)"
 }
@@ -223,8 +234,12 @@ templating_help() {
 }
 
 new_template() {
-    printf 'License name/alias (spaces will be removed) -- '
-    read -r ln
+    if [ ! "$1" ]; then
+        printf 'License name/alias (spaces will be removed) -- '
+        read -r ln
+    else
+        ln="$1"
+    fi
 
     [ -z "$ln" ] && (
         error 'Cannot leave license name empty'
@@ -234,10 +249,7 @@ new_template() {
     ln="$LICENSE_DIR/$(echo "$ln" | tr -d ' ' | head -c250)"
 
     if [ -f "$ln" ]; then
-        printf 'This license already exists, do you want to overwrite it? [y/n] '
-        read -r yn
-
-        [ "$yn" != 'y' ] && exit
+        yn 'This license already exists, do you want to overwrite it ?'
     fi
 
     editor="${EDITOR:-}"
@@ -252,7 +264,7 @@ new_template() {
         exit 8
     )
 
-    depend "$(basename "$editor" | awk '{print $1}')"
+    depend "$(basename "$editor")"
 
     set -x
     $editor "$ln"
@@ -263,15 +275,14 @@ new_template() {
 
 delete_license() {
     check_valid_license "$1"
-    rm -vi "$LICENSE_DIR"/"$(echo "$1" | sed "$LICENSE_SED")"
+
+    einfo "Delete license $1 ?"
+    yn && rm "$LICENSE_DIR"/"$(echo "$1" | sed "$LICENSE_SED")"
 }
 
 new_config() {
-    einfo "This will overwite your config, are you sure you want do do that?"
-    printf '   [y/n] '
-    read -r yn
-
-    [ "$yn" != 'y' ] && exit
+    einfo "This will overwite your config, are you sure you want do do that ?"
+    yn
 
     make_new_config
     info 'New config made and saved'
@@ -294,27 +305,28 @@ main() {
     fi
 
     [ -z "$1" ] && (
-        usage
+        usage >&2
         exit 1
     )
 
     ffind "$LICENSE_DIR" -not -name . -not -path "$LICENSE_DIR" -prune -not -type f -exec rm -R {} +
 
     check_license_conflict
+
     case "$1" in
-    -help | --help | -h) usage ;;
-    -list-licenses | -l) list_licenses ;;
-    -current-license | -c) einfo "$(show_license)" ;;
-    -pick-license | -p) license_picker ;;
-    -preview-license | -P)
+    help | h) usage ;;
+    list-licenses | l) list_licenses ;;
+    current-license | c) einfo "$(show_license)" ;;
+    pick-license | p) license_picker ;;
+    preview-license | P)
         check_valid_license "$2"
         lless "$LICENSE_DIR"/"$(echo "$2" | sed "$LICENSE_SED")" 2>/dev/null || einfo "License $2 not found"
         ;;
-    -remove-license | -r) remove_license ;;
-    -search-license | -s) search_license "$2" ;;
-    -template-help | -T) templating_help ;;
-    -new-template | -t) new_template ;;
-    -delete-license | -R)
+    remove-license | r) remove_license ;;
+    search-license | s) search_license "$2" ;;
+    template-help | T) templating_help ;;
+    new-template | t) new_template "$2" ;;
+    delete-license | R)
         tmp_l=0
 
         for lic in "$@"; do
@@ -326,11 +338,11 @@ main() {
             delete_license "$lic"
         done
         ;;
-    -new-config | -C) new_config ;;
-    -check-conflict | -k) check_license_conflict ;;
+    new-config | C) new_config ;;
+    check-conflict | k) check_license_conflict ;;
 
     @*) check_valid_license "$1" && get_license "$1" ;;
-    *) error "Flag $1 is not known." && usage && exit 2 ;;
+    *) error "Subcommand $1 is not known." && usage && exit 2 ;;
     esac
 }
 

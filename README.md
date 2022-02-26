@@ -5,7 +5,7 @@
 # Dependencies
 
 - coreutils for stuff like `head`, `awk`, ...
-- fzf (optional) for `-pick-license`, `-p` flags
+- fzf (optional) for `pick-license`/`p` subcommands
 - git (optional) for generating info in default config automatically
 - ncurses (optional) for colours (`LMGR_COLOURS=1`) using `tput`
 
@@ -21,10 +21,7 @@
 - Linux
 
 ```bash
-git clone https://github.com/TruncatedDinosour/lmgr && cd lmgr
-
-chmod a+rx lmgr
-
+git clone https://ari-web.xyz/gh/lmgr && cd lmgr
 sudo install -Dm755 lmgr /usr/local/bin
 ```
 
@@ -48,3 +45,11 @@ export AUTHOR_EMAIL='joe@doe.com'
 export AUTHOR_WEBSITE='https://joe.doe/'
 export TEMPLATE_DIR='/usr/share/lmgr'
 ```
+
+Remember the config is just a POSIX shell script, so you can run
+any command, overwrite any variable and in general do anything you can
+in shellscript
+
+# Subcommands, configuration and environment config
+
+Just run `lmgr h` and see yourself
