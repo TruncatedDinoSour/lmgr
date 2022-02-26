@@ -11,7 +11,7 @@
 
 set -e
 
-VERSION='0.9'
+VERSION='1.0'
 
 # Init
 
@@ -164,7 +164,7 @@ get_license() {
     l_name='LICENSE'
     [ "$(head -n1 "$LICENSE_DIR"/"$user_license")" = 'UNLICENSE' ] && l_name='UNLICENSE'
 
-    yn "Overwrite $l_name ?" && cp -fL "$LICENSE_DIR"/"$user_license" "$l_name"
+    cp -fiL "$LICENSE_DIR"/"$user_license" "$l_name"
 
     sed -i "$l_name" \
         -e "s/{{PROJECT_NAME}}/$(sed_escape "$(basename "$PWD")")/g" \
